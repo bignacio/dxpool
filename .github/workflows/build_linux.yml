@@ -1,0 +1,23 @@
+name: Linux build
+
+on: [pull_request]
+
+jobs:
+  build:
+    name: ${{matrix.compiler}}, C++${{matrix.standard}}, ${{matrix.build_type}}
+    runs-on: ubuntu-22.04
+    container:
+      image: ghcr.io/bignacio/docker-images/ubuntu-cpp-22.10:1
+      credentials:
+        username: bignacio
+        password: ${{ secrets.GHCR_PACKAGES_TOKEN }}
+    strategy:
+      matrix:
+        compiler: [g++-10, g++-11, g++-12, clang++-13, clang++-14, clang++-15]
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build and test
+      env:
+        CXX: ${{matrix.compiler}}
+      run: ci-scripts/build_and_test.sh

@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"clangd.checkUpdates": true,
+		"C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
+		"editor.formatOnSave": true,
+		"C_Cpp.codeAnalysis.clangTidy.checks.disabled": [
+			"*"
+		],
+		"C_Cpp.codeAnalysis.clangTidy.checks.enabled": [
+			"performance-*",
+			"bugprone-*",
+			"cppcoreguidelines-*",
+			"modernize-*",
+			"readability-*",
+			"concurrency-*",
+			"clang-analyzer-core.*",
+			"clang-analyzer-cplusplus.*",
+		],
+		"C_Cpp.codeAnalysis.clangTidy.enabled": true,
+		"C_Cpp.codeAnalysis.clangTidy.path": "clang-tidy",
+		"C_Cpp.codeAnalysis.clangTidy.headerFilter": "",
+		"doxygen_runner.configuration_file_override": "${workspaceFolder}/Doxyfile"
+	}
+}

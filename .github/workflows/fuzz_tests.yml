@@ -1,0 +1,25 @@
+name: Fuzz tests
+
+on: [pull_request]
+
+jobs:
+  fuzz-tests:
+    runs-on: ubuntu-22.04
+    container:
+      image: ghcr.io/bignacio/docker-images/ubuntu-cpp-22.10:1
+      credentials:
+        username: bignacio
+        password: ${{ secrets.GHCR_PACKAGES_TOKEN }}
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Smoke tests - g++ 12
+      env:
+        CXX: g++-12
+      run: |
+        cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
+
+        make -j2 -C build
+        build/fuzz/dxpool_fuzz 'Fuzz test concurrent indexer - SMOKE'

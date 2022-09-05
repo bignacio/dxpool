@@ -1,0 +1,25 @@
+name: Publish documentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Generate docs
+        run: |
+          sudo apt-get install doxygen git -y
+          doxygen Doxyfile
+          touch docs/html/.nojekyll
+
+      - uses: DenverCoder1/doxygen-github-pages-action@v1.2.0
+        with:
+          github_token: ${{ secrets.DOCS_PUBLISH_TOKEN }}
+          branch: docs-gh-pages
+          folder: docs/html
+          config_file: Doxyfile
