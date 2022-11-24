@@ -1,0 +1,4 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$dc/d49/classdxpool_1_1ProcessorOperator.html" title="Interface to be implemented for handling processor (CPU) operations on specific platforms." alt="" coords="5,5,200,32"/>
+<area shape="rect" id="node2" href="$d8/d3b/classdxpool_1_1ProcessorLinux.html" title="The ProcessorLinux class provides information about CPU cores and NUMA nodes on Linux." alt="" coords="248,5,420,32"/>
+</map>

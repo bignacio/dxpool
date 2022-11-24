@@ -1,0 +1,4 @@
+<map id="dxpool::ProcessorOperator" name="dxpool::ProcessorOperator">
+<area shape="rect" id="node1" title="Interface to be implemented for handling processor (CPU) operations on specific platforms." alt="" coords="5,5,200,32"/>
+<area shape="rect" id="node2" href="$d8/d3b/classdxpool_1_1ProcessorLinux.html" title="The ProcessorLinux class provides information about CPU cores and NUMA nodes on Linux." alt="" coords="17,80,189,107"/>
+</map>
