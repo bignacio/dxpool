@@ -12,6 +12,8 @@ The worker pool implementation uses pool of threads with user defined core and/o
 
 See [the contribution guide](CONTRIBUTING.md) for details on how to propose and submit changes to this project, always observing [the code of conduct](CODE-OF-CONDUCT.md).
 
+You can also contribute by [creating a feature request or filing a bug report](https://github.com/bignacio/dxpool/issues).
+
 ## Supported compilers and platforms
 
 `dxpool` is compatible with C++11 on the following compilers
