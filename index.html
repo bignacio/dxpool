@@ -147,7 +147,7 @@ Concurrency support</h2>
 Retrieving and returning items</h2>
 <p>Items retrieved from the pool are wrapped in a <code>PoolType</code> object that has <code>Empty() == true</code> if there are no available objects in the pool. Retrieving items from the pool will never block waiting for an available item.</p>
 <p>Items are returned to the pool automatically through RIIA and allow for custom code to be invoked and reset items before returning them to the pool.</p>
-<p>For more details consult [examples](examples), [tests](test) and the API <a href="http://github.com/bignacio/dxpool">documentation</a>.</p>
+<p>For more details consult [examples](examples), [tests](test) and the API <a href="https://bignacio.github.io/dxpool">documentation</a>.</p>
 <h2><a class="anchor" id="autotoc_md10"></a>
 Putting it all together</h2>
 <p>Declaring and using an static pool </p><div class="fragment"><div class="line">// a static pool containing 50 strings using the MutexIndexer</div>
@@ -196,7 +196,7 @@ The worker pool</h1>
 <div class="line">auto pool = builder.OnNUMANode(*node.begin())</div>
 <div class="line">                .WithThreadsPerCore(2)</div>
 <div class="line">                .Build();</div>
-</div><!-- fragment --><p>For more details consult [examples](examples), [tests](test) and the API <a href="http://github.com/bignacio/dxpool">documentation</a>.</p>
+</div><!-- fragment --><p>For more details consult [examples](examples), [tests](test) and the API <a href="https://bignacio.github.io/dxpool">documentation</a>.</p>
 <h2><a class="anchor" id="autotoc_md12"></a>
 Notes on task execution</h2>
 <p>Upon calling <code>Submit</code> tasks are added to a task queue and executed when there's an available worker.</p>
