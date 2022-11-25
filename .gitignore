@@ -37,3 +37,4 @@ build
 .cache
 docs
 .vscode
+dxpool.code-workspace
