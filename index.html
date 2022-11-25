@@ -150,7 +150,12 @@ Retrieving and returning items</h2>
 <p>For more details consult [examples](examples), [tests](test) and the API <a href="https://bignacio.github.io/dxpool">documentation</a>.</p>
 <h2><a class="anchor" id="autotoc_md10"></a>
 Putting it all together</h2>
-<p>Declaring and using an static pool </p><div class="fragment"><div class="line">// a static pool containing 50 strings using the MutexIndexer</div>
+<p>Declaring and using an static pool </p><div class="fragment"><div class="line">#include &quot;IndexHolder.h&quot;</div>
+<div class="line">#include &quot;MutexIndexer.h&quot;</div>
+<div class="line">#include &quot;ConcurrentIndexer.h&quot;</div>
+<div class="line">#include &lt;Pool.h&gt;</div>
+<div class="line"> </div>
+<div class="line">// a static pool containing 50 strings using the MutexIndexer</div>
 <div class="line">dxpool:StaticPool&lt;std::string, 50, MutexIndexer&gt; pool;</div>
 <div class="line"> </div>
 <div class="line">auto item = pool.Take();</div>
@@ -177,18 +182,21 @@ The worker pool</h1>
 <div class="line"> </div>
 <div class="line">std::cout &lt;&lt; &quot;the sum is &quot; &lt;&lt; result.get() &lt;&lt; std::endl;</div>
 </div><!-- fragment --><p>Worker pools have thread safety guarantees and can be used concurrently by multiple threads.</p>
-<p>Examples of creating and using worker pools </p><div class="fragment"><div class="line">  // a worker pool of 1 thread for all available cores</div>
-<div class="line">  dxpool::Processor processor;</div>
-<div class="line">  const auto cores = processor.FindAvailableCores();</div>
+<p>Examples of creating and using worker pools </p><div class="fragment"><div class="line">#include &lt;WorkerPool.h&gt;</div>
 <div class="line"> </div>
-<div class="line">  dxpool::WorkerPoolBuilder builder;</div>
-<div class="line">  auto pool = builder.OnCores(cores) // use all cores</div>
-<div class="line">              .WithThreadsPerCore(1) // create one thread per core</div>
-<div class="line">              .Build();</div>
+<div class="line">// a worker pool of 1 thread for all available cores</div>
+<div class="line">dxpool::Processor processor;</div>
+<div class="line">const auto cores = processor.FindAvailableCores();</div>
+<div class="line"> </div>
+<div class="line">dxpool::WorkerPoolBuilder builder;</div>
+<div class="line">auto pool = builder.OnCores(cores) // use all cores</div>
+<div class="line">            .WithThreadsPerCore(1) // create one thread per core</div>
+<div class="line">            .Build();</div>
 <div class="line"> </div>
 <div class="line"> </div>
 <div class="line">// a worker pool with 2 threads for the first NUMA node available</div>
 <div class="line"> </div>
+<div class="line">#include &lt;WorkerPool.h&gt;</div>
 <div class="line">dxpool::Processor processor;</div>
 <div class="line">const auto node = processor.FindAvailableNumaNodes();</div>
 <div class="line"> </div>
