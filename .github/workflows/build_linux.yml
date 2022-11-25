@@ -3,8 +3,8 @@ name: Linux build
 on: [pull_request]
 
 jobs:
-  build:
-    name: ${{matrix.compiler}}, C++${{matrix.standard}}, ${{matrix.build_type}}
+  build-linux:
+    name: build-linux
     runs-on: ubuntu-22.04
     container:
       image: ghcr.io/bignacio/docker-images/ubuntu-cpp-22.10:1
