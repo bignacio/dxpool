@@ -38,3 +38,5 @@ build
 docs
 .vscode
 dxpool.code-workspace
+
+simple_pool/build
