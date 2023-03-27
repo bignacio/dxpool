@@ -17,7 +17,6 @@ void test_alloc_mem_node(void) { // NOLINT(readability-function-cognitive-comple
     MemNode *node = alloc_poolable_mem(mem_size);
 
     ASSERT_MSG(node->data != NULL, "allocated data should not be null");
-    ASSERT_MSG(node->size == mem_size, "incorrect allocated size");
     ASSERT_MSG(node->next == NULL, "next node should be null");
 
     ptrdiff_t *node_mem_val = ((ptrdiff_t *)node->data) - 1;
@@ -38,14 +37,14 @@ void test_get_memnode_in_data(void) {
     MemNode *node_in_data = get_memnode_in_data(node->data);
 
     ASSERT_MSG(node == node_in_data, "obtained node should be equal to original");
-    ASSERT_MSG(node_in_data->size == mem_size, "obtained node should contain the correct size");
 }
 
 void test_create_pool(void) {
     PRINT_TEST_NAME;
-
-    MemPool *pool = alloc_mem_pool();
-    ASSERT_MSG(pool->head == NULL, "new pool should have null head");
+    const size_t alloc_size = 4762;
+    MemPool *pool = alloc_mem_pool(alloc_size);
+    ASSERT_MSG(pool->mem_size == alloc_size, "the new pool should the correct size set");
+    ASSERT_MSG(pool->head == NULL, "new pool should have a null head");
 
     free_mem_pool(pool);
 }
@@ -53,10 +52,10 @@ void test_create_pool(void) {
 void test_acquire_empty_pool(void) {
     PRINT_TEST_NAME;
 
-    MemPool *pool = alloc_mem_pool();
-
     const size_t alloc_size = 971;
-    void *data = pool_mem_acquire(pool, alloc_size);
+    MemPool *pool = alloc_mem_pool(alloc_size);
+
+    void *data = pool_mem_acquire(pool);
 
     ASSERT_MSG(data != NULL, "empty pool should create new node with data");
 
@@ -71,10 +70,10 @@ void test_acquire_empty_pool(void) {
 void test_acquire_and_return_once(void) { // NOLINT(readability-function-cognitive-complexity)
     PRINT_TEST_NAME;
 
-    MemPool *pool = alloc_mem_pool();
-
     const size_t alloc_size = 377;
-    void *data = pool_mem_acquire(pool, alloc_size);
+    MemPool *pool = alloc_mem_pool(alloc_size);
+
+    void *data = pool_mem_acquire(pool);
     ASSERT_MSG(pool->num_allocs == 1, "allocated memory node should be tracked");
     ASSERT_MSG(pool->num_available == 0, "there should be no memory node available in the pool");
 
@@ -87,6 +86,22 @@ void test_acquire_and_return_once(void) { // NOLINT(readability-function-cogniti
     ASSERT_MSG(pool->num_available == 0, "all memory nodes should have been freed");
     ASSERT_MSG(pool->head == NULL, "the pool should be empty");
 
+    free_mem_pool(pool);
+}
+
+void test_returned_mem_can_be_reused(void) { // NOLINT(readability-function-cognitive-complexity)
+    PRINT_TEST_NAME;
+
+    const size_t alloc_size = 1024;
+    MemPool *pool = alloc_mem_pool(alloc_size);
+
+    void *first_acquired = pool_mem_acquire(pool);
+    pool_mem_return(pool, first_acquired);
+    ASSERT_MSG(pool->num_allocs == 1, "allocated memory node should be tracked");
+    ASSERT_MSG(pool->num_available == 1, "there should one node available in the pool");
+
+    void *second_acquired = pool_mem_acquire(pool);
+    ASSERT_MSG(first_acquired == second_acquired, "memory should have been reused");
     free_mem_pool(pool);
 }
 
