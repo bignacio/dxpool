@@ -1,10 +1,16 @@
+#include <stdint.h>
 #define TRACK_POOL_USAGE
 #include "dyn_mem_pool.h"
 #include <assert.h>
+#include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef __linux__
+#include <sched.h>
+#endif
 
 #define PRINT_TEST_NAME printf("-- %s\n", __ASSERT_FUNCTION)
 #define ASSERT_MSG(cond, message) assert((cond) && (message))
@@ -108,14 +114,14 @@ void test_returned_mem_can_be_reused(void) { // NOLINT(readability-function-cogn
     free_mem_pool(pool);
 }
 
-void test_acquire_return_many(void) { // NOLINT(readability-function-cognitive-complexity)
+void test_acquire_return_many_single_thread(void) { // NOLINT(readability-function-cognitive-complexity)
     PRINT_TEST_NAME;
     const size_t alloc_size = 1024;
     struct MemPool *pool = alloc_mem_pool(alloc_size);
-    const int mem_count = 12;
+    const uint32_t mem_count = 12;
     void *acquired_mem[mem_count];
 
-    for (int i = 0; i < mem_count; i++) {
+    for (uint32_t i = 0; i < mem_count; i++) {
         acquired_mem[i] = pool_mem_acquire(pool);
         pool_mem_return(acquired_mem[i]);
         acquired_mem[i] = pool_mem_acquire(pool);
@@ -123,9 +129,9 @@ void test_acquire_return_many(void) { // NOLINT(readability-function-cognitive-c
 
     // check all memory entries are unique
     // brute force but it's ok for this test
-    for (int i = 0; i < mem_count; i++) {
+    for (uint32_t i = 0; i < mem_count; i++) {
         int found_count = 0;
-        for (int j = 0; j < mem_count; j++) {
+        for (uint32_t j = 0; j < mem_count; j++) {
             if (acquired_mem[i] == acquired_mem[j]) {
                 found_count++;
             }
@@ -135,13 +141,77 @@ void test_acquire_return_many(void) { // NOLINT(readability-function-cognitive-c
     ASSERT_MSG(pool->num_allocs == mem_count, "allocated memory node should be tracked");
     ASSERT_MSG(pool->num_available == 0, "there should be no available entries in the pool");
 
-    for (int i = 0; i < mem_count; i++) {
+    for (uint32_t i = 0; i < mem_count; i++) {
         pool_mem_return(acquired_mem[i]);
     }
     ASSERT_MSG(pool->num_available == mem_count, "all allocated memory should have been returned");
 
     pool_mem_free_all(pool);
     ASSERT_MSG(pool->num_available == 0, "there should be no available entries in the pool after all free");
+
+    free_mem_pool(pool);
+}
+
+typedef struct {
+    struct MemPool *pool;
+    uint32_t expected_allocs;
+} ThreadTestArgs;
+
+void *pool_repeated_acquire_return(void *args) {
+    ThreadTestArgs *run_args = (ThreadTestArgs *)args;
+    uint32_t alloc_count = __atomic_load_n(&run_args->pool->num_allocs, __ATOMIC_ACQUIRE);
+    while (alloc_count < run_args->expected_allocs) {
+        void *data = pool_mem_acquire(run_args->pool);
+#ifdef __linux__
+        sched_yield();
+#endif
+        pool_mem_return(data);
+        alloc_count = __atomic_load_n(&run_args->pool->num_allocs, __ATOMIC_ACQUIRE);
+    }
+    return NULL;
+}
+
+void test_acquire_return_many_multi_threaded(void) { // NOLINT(readability-function-cognitive-complexity)
+    PRINT_TEST_NAME;
+
+    const uint32_t num_runners = 4;
+    const size_t memnode_size = 64;
+    pthread_t runners[num_runners];
+
+    struct MemPool *pool = alloc_mem_pool(memnode_size);
+
+    ThreadTestArgs run_args = {.pool = pool, .expected_allocs = num_runners};
+    for (uint32_t i = 0; i < num_runners; i++) {
+        int created = pthread_create(&runners[i], NULL, pool_repeated_acquire_return, &run_args);
+
+        ASSERT_MSG(created == 0, "fail to create thread");
+    }
+
+    for (uint32_t i = 0; i < num_runners; i++) {
+        pthread_join(runners[i], NULL);
+    }
+
+    ASSERT_MSG(pool->num_allocs == (uint32_t)num_runners, "each thread runner should allocate only one memory node");
+    ASSERT_MSG(pool->num_available == (uint32_t)num_runners, "all allocated memory nodes should be available");
+
+    // manually check that all memory nodes in the pool are unique
+    uint32_t total_nodes = 0;
+    struct MemNode *node = pool->head;
+    while (node != NULL) {
+        int node_count = 0;
+        struct MemNode *ptr = pool->head;
+        while (ptr != NULL) {
+            if (ptr == node) {
+                node_count++;
+            }
+            ptr = ptr->next;
+        }
+        ASSERT_MSG(node_count == 1, "there should be only one instance of each memory node in the pool");
+        node = node->next;
+        total_nodes++;
+    }
+
+    ASSERT_MSG(total_nodes == num_runners, "there should be one node created from each runner in the pool");
 
     free_mem_pool(pool);
 }
@@ -156,5 +226,6 @@ int main(void) {
     test_acquire_empty_pool();
     test_acquire_and_return_once();
     test_returned_mem_can_be_reused();
-    test_acquire_return_many();
+    test_acquire_return_many_single_thread();
+    test_acquire_return_many_multi_threaded();
 }

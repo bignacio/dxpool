@@ -25,7 +25,9 @@ add_compile_options(
 )
 
 add_executable(dyn_mem_pool_test dyn_mem_pool_test.c)
+target_link_libraries(dyn_mem_pool_test pthread)
 add_executable(dyn_mem_pool_fuzz dyn_mem_pool_fuzz.c)
+target_link_libraries(dyn_mem_pool_fuzz pthread)
 
 set_target_properties(dyn_mem_pool_test PROPERTIES CMAKE_C_CLANG_TIDY clang-tidy -checks=-*,bugprone-*,performance-*,clang-*,llvm-*,llvm-libc-*,misc-*,modernize-*,readability-*,cert-*,-llvm-header-guard -header-filter=.* --warnings-as-errors=* -p=build)
 
