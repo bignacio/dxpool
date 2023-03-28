@@ -5,44 +5,61 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/cdefs.h>
 
 enum {
     NODE_ALIGNMENT = 16,
     CACHE_LINE_SIZE = 64,
 };
 
-typedef struct {
+
+struct MemNode {
     struct MemNode* next;
     void *data;
-} MemNode;
+    struct MemPool* pool;
+} ;
 
-typedef struct {
-    MemNode* head;
+
+struct MemPool {
+    struct MemNode* head;
     size_t mem_size;
 #ifdef TRACK_POOL_USAGE
     uint32_t num_allocs;
     uint32_t num_available;
 #endif
-} MemPool;
+};
+
+
 
 // MemNode operations
 
-void track_pool_usage_allocs(__attribute__((unused)) MemPool* pool) {
+void track_pool_usage_allocs(__attribute__((unused)) struct MemPool* pool) {
 #ifdef TRACK_POOL_USAGE
     __atomic_add_fetch(&pool->num_allocs, 1, __ATOMIC_RELEASE);
 #endif
 }
 
-__attribute__((nonnull (1)))
-static inline MemNode* get_memnode_in_data(void* data) {
+void track_pool_usage_returned(__attribute__((unused)) struct MemPool* pool) {
+#ifdef TRACK_POOL_USAGE
+    __atomic_add_fetch(&pool->num_available, 1, __ATOMIC_RELEASE);
+#endif
+}
+
+void track_pool_usage_memnode_unavailable(__attribute__((unused)) struct MemPool* pool) {
+#ifdef TRACK_POOL_USAGE
+    __atomic_sub_fetch(&pool->num_available, 1, __ATOMIC_RELEASE);
+#endif
+}
+
+static inline struct MemNode* get_memnode_in_data(void* data) {
     ptrdiff_t *node_mem_val = ((ptrdiff_t *)data) - 1;
-    MemNode *node = (MemNode *)(node_mem_val[0]); // NOLINT(performance-no-int-to-ptr)
+    struct MemNode *node = (struct MemNode *)(node_mem_val[0]); // NOLINT(performance-no-int-to-ptr)
     return node;
 }
 
-__attribute__((malloc))
-MemNode* alloc_poolable_mem(size_t size) {
-    MemNode* node = malloc(sizeof(MemNode));
+__attribute__((malloc,warn_unused_result))
+struct MemNode* alloc_poolable_mem(struct MemPool* pool, size_t size) {
+    struct MemNode* node = malloc(sizeof(struct MemNode));
     if (node == NULL) {
         return NULL;
     }
@@ -57,16 +74,16 @@ MemNode* alloc_poolable_mem(size_t size) {
     // store the address of the owning node in the first sizeof(ptrdiff_t) byes
     ptr_data[0] = (ptrdiff_t) node;
     node->data = ptr_data+1;
+    node->pool = pool;
     return node;
 }
 
-__attribute__((nonnull (1)))
-void free_poolable_mem(MemNode* node) {
+void free_poolable_mem(struct MemNode* node) {
     // we need to restore all the allocated memory
     ptrdiff_t* ptr_data = node->data;
-    void* all_data = ptr_data-1;
+    void* node_data = ptr_data-1;
 
-    free(all_data);
+    free(node_data);
     free(node);
 }
 
@@ -77,14 +94,15 @@ void free_poolable_mem(MemNode* node) {
  * Changing the size of the memory block after creation leads to undefined behaviour.
  *
  * @param size of each memory block
+ * @return a new memory pool or NULL if the memory for it cannot be allocated
  */
-__attribute__((malloc))
-MemPool* alloc_mem_pool(size_t size) {
-    MemPool* pool = malloc(sizeof(MemPool));
+__attribute__((malloc,warn_unused_result))
+struct MemPool* alloc_mem_pool(size_t size) {
+    struct MemPool* pool = malloc(sizeof(struct MemPool));
     if(pool == NULL) {
         return NULL;
     }
-    memset((void*)pool, 0, sizeof(MemPool));
+    memset((void*)pool, 0, sizeof(struct MemPool));
     pool->mem_size = size;
 
     return pool;
@@ -94,22 +112,26 @@ MemPool* alloc_mem_pool(size_t size) {
  * @brief Free the memory used by all items in the pool and empties the pool.
  * This function is not thread safe and should be only invoked when the pool is destroyed
  */
-__attribute__((nonnull (1)))
-void pool_mem_free_all(MemPool* pool) {
-    (void)pool;
+void pool_mem_free_all(struct MemPool* pool) {
+    struct MemNode* node = pool->head;
+    while(node != NULL) {
+        pool->head = node->next;
+        free_poolable_mem(node);
+        track_pool_usage_memnode_unavailable(pool);
+        node = pool->head;
+    }
+
 }
 
-__attribute__((nonnull (1)))
-void free_mem_pool(MemPool* pool) {
+void free_mem_pool(struct MemPool* pool) {
     pool_mem_free_all(pool);
     free(pool);
 }
 
 // MemPool acquire and return operations
-
-__attribute__((nonnull (1)))
-void* pool_mem_try_alloc_data(MemPool* pool) {
-    MemNode* node = alloc_poolable_mem(pool->mem_size);
+__attribute__((warn_unused_result))
+void* pool_mem_try_alloc_data(struct MemPool* pool)  {
+    struct MemNode* node = alloc_poolable_mem(pool, pool->mem_size);
     if(node == NULL) {
         return NULL;
     }
@@ -124,22 +146,35 @@ void* pool_mem_try_alloc_data(MemPool* pool) {
  * @param pool the memory pool where objects will be tracked
  * @return void* pointer to allocated memory or NULL if memory cannot be allocated
  */
-__attribute__((nonnull (1)))
-void* pool_mem_acquire(MemPool* pool) {
+__attribute__((warn_unused_result))
+void* pool_mem_acquire(struct MemPool* pool) {
     while (true) {
-        MemNode* head = __atomic_load_n(&pool->head, __ATOMIC_ACQUIRE);
-        if (head == NULL) {
+        struct MemNode* previous_head = __atomic_load_n(&pool->head, __ATOMIC_ACQUIRE);
+        if (previous_head == NULL) {
             return pool_mem_try_alloc_data(pool);
         }
 
-        return NULL;
+        struct MemNode* new_head = __atomic_load_n(&previous_head->next,__ATOMIC_ACQUIRE);
+        if (__atomic_compare_exchange_n(&pool->head, &previous_head, new_head, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
+            track_pool_usage_memnode_unavailable(pool);
+            return previous_head->data;
+        }
+
     }
 }
 
-__attribute__((nonnull (1,2)))
-void pool_mem_return(MemPool* pool, void* data) {
-    (void)pool;
-    (void)data;
+void pool_mem_return(void* data) {
+    struct MemNode* new_head = get_memnode_in_data(data);
+    struct MemPool* pool = new_head->pool;
+
+    while (true) {
+        struct MemNode* previous_head = __atomic_load_n(&pool->head, __ATOMIC_ACQUIRE);
+        __atomic_store_n(&new_head->next, previous_head, __ATOMIC_RELEASE);
+        if (__atomic_compare_exchange_n(&pool->head, &previous_head, new_head, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
+            track_pool_usage_returned(pool);
+            return;
+        }
+    }
 }
 
 

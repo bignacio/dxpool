@@ -24,10 +24,11 @@ void fuzz_alloc_free_poolable_mem(void) {
     print_mem_usage();
     printf("running alloc and free poolable memory tests. sizes=%d, iterations=%d\n", size_count, run_count);
 
+    struct MemPool pool;
     for (int i = 0; i < run_count; i++) {
         for (int s_index = 0; s_index < size_count; s_index++) {
             size_t size = sizes[s_index];
-            MemNode *node = alloc_poolable_mem(size);
+            struct MemNode *node = alloc_poolable_mem(&pool, size);
             free_poolable_mem(node);
         }
     }
