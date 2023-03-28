@@ -158,14 +158,17 @@ typedef struct {
 } ThreadTestArgs;
 
 void *pool_repeated_acquire_return(void *args) {
+    int num_runs = 17;
     ThreadTestArgs *run_args = (ThreadTestArgs *)args;
     uint32_t alloc_count = __atomic_load_n(&run_args->pool->num_allocs, __ATOMIC_ACQUIRE);
     while (alloc_count < run_args->expected_allocs) {
-        void *data = pool_mem_acquire(run_args->pool);
+        for (int i = 0; i < num_runs; i++) {
+            void *data = pool_mem_acquire(run_args->pool);
 #ifdef __linux__
-        sched_yield();
+            sched_yield();
 #endif
-        pool_mem_return(data);
+            pool_mem_return(data);
+        }
         alloc_count = __atomic_load_n(&run_args->pool->num_allocs, __ATOMIC_ACQUIRE);
     }
     return NULL;
