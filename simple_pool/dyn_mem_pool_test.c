@@ -158,7 +158,7 @@ typedef struct {
 } ThreadTestArgs;
 
 void *pool_repeated_acquire_return(void *args) {
-    int num_runs = 17;
+    const int num_runs = 17;
     ThreadTestArgs *run_args = (ThreadTestArgs *)args;
     uint32_t alloc_count = __atomic_load_n(&run_args->pool->num_allocs, __ATOMIC_ACQUIRE);
     while (alloc_count < run_args->expected_allocs) {

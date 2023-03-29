@@ -1,9 +1,13 @@
 #include "dyn_mem_pool.h"
+#include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 
 #ifdef __linux__
+#include <sched.h>
 #include <sys/resource.h>
 #endif
+
 void print_mem_usage(void) {
 #ifdef __linux__
     struct rusage r_usage;
@@ -36,7 +40,7 @@ void fuzz_alloc_free_poolable_mem(void) {
     print_mem_usage();
 }
 
-void fuzz_acquire_release_single_thread(void) {
+void fuzz_acquire_release_single_threaded(void) {
     const size_t alloc_size = 773;
     struct MemPool *pool = alloc_mem_pool(alloc_size);
     const int mem_count = 113;
@@ -75,9 +79,77 @@ void fuzz_acquire_release_single_thread(void) {
     print_mem_usage();
 }
 
+void thred_yield(void) {
+#ifdef __linux__
+    sched_yield();
+#endif
+}
+
+void *pool_acquire_return_fn(void *arg) {
+    const int num_runs = 500;
+    const int num_memnodes = 33;
+    struct MemPool *pool = (struct MemPool *)arg;
+
+    for (int i = 0; i < num_runs; i++) {
+        void *all_data[num_memnodes];
+        for (int j = 0; j < num_memnodes; j++) {
+            all_data[j] = pool_mem_acquire(pool);
+            thred_yield();
+        }
+
+        for (int j = 0; j < num_memnodes; j++) {
+            pool_mem_return(all_data[j]);
+            thred_yield();
+        }
+    }
+
+    return NULL;
+}
+
+void fuzz_acquire_release_multi_threaded(void) {
+    const uint32_t num_runners = 32;
+    const size_t memnode_size = 32;
+    pthread_t runners[num_runners];
+
+    print_mem_usage();
+    printf("running multithreaded acquire and release cycles. runners=%d, alloc size=%zu\n", num_runners, memnode_size);
+
+    struct MemPool *pool = alloc_mem_pool(memnode_size);
+
+    for (uint32_t i = 0; i < num_runners; i++) {
+        int created = pthread_create(&runners[i], NULL, pool_acquire_return_fn, pool);
+        assert(created == 0);
+    }
+
+    for (uint32_t i = 0; i < num_runners; i++) {
+        pthread_join(runners[i], NULL);
+    }
+
+    struct MemNode *node = pool->head;
+    while (node != NULL) {
+        int node_count = 0;
+        struct MemNode *ptr = pool->head;
+        while (ptr != NULL) {
+            if (ptr == node) {
+                node_count++;
+            }
+            ptr = ptr->next;
+        }
+        assert(node_count == 1);
+        node = node->next;
+    }
+
+    free_mem_pool(pool);
+    print_mem_usage();
+}
+
 int main(void) {
     printf("--\n");
     fuzz_alloc_free_poolable_mem();
+
     printf("--\n");
-    fuzz_acquire_release_single_thread();
+    fuzz_acquire_release_single_threaded();
+
+    printf("--\n");
+    fuzz_acquire_release_multi_threaded();
 }
