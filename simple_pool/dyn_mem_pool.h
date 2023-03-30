@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/cdefs.h>
+#include <limits.h>
+#include <sys/types.h>
 
 enum {
     NODE_ALIGNMENT = 16,
@@ -22,7 +23,7 @@ struct MemNode {
 
 struct MemPool {
     struct MemNode* head;
-    size_t mem_size;
+    uint32_t mem_size;
 #ifdef TRACK_POOL_USAGE
     uint32_t num_allocs;
     uint32_t num_available;
@@ -58,7 +59,7 @@ static inline struct MemNode* get_memnode_in_data(void* data) {
 }
 
 __attribute__((malloc,warn_unused_result))
-struct MemNode* alloc_poolable_mem(struct MemPool* pool, size_t size) {
+struct MemNode* alloc_poolable_mem(struct MemPool* pool, uint32_t size) {
     struct MemNode* node = malloc(sizeof(struct MemNode));
     if (node == NULL) {
         return NULL;
@@ -97,7 +98,7 @@ void free_poolable_mem(struct MemNode* node) {
  * @return a new memory pool or NULL if the memory for it cannot be allocated
  */
 __attribute__((malloc,warn_unused_result))
-struct MemPool* alloc_mem_pool(size_t size) {
+struct MemPool* alloc_mem_pool(uint32_t size) {
     struct MemPool* pool = malloc(sizeof(struct MemPool));
     if(pool == NULL) {
         return NULL;
@@ -177,6 +178,24 @@ void pool_mem_return(void* data) {
     }
 }
 
+/*
+    Multi pool support allows allocation of arbitrary memory sizes, distributing them across multiple pools
+    at the expense of extra allocated memory if the requested size doesn't match the defined pool memory size
+*/
 
+// Minium amount of byes allocated in a multi pool setup
+static const uint32_t DynPoolMinMultiPoolMemNodeSizeBits = 9;
+
+/**
+ * @brief Finds the index of the pool where a memory node of size `size` can be allocated
+ *
+ * @param size the size of the memory node to be allocated. If size is zero, the return value is undefined
+ * @return uint32_t index of pool to hold the memory node
+ */
+uint32_t find_multipool_index_for_size(uint32_t size) {
+    static const uint32_t int32bitcount = sizeof(uint32_t) * CHAR_BIT;
+    uint32_t size_value = (size - 1) >>DynPoolMinMultiPoolMemNodeSizeBits;
+    return (int32bitcount - (uint32_t)__builtin_clz(size_value));
+}
 
 #endif //DYN_MEM_POOL_H

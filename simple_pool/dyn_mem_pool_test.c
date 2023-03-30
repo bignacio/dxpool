@@ -1,9 +1,10 @@
-#include <stdint.h>
 #define TRACK_POOL_USAGE
 #include "dyn_mem_pool.h"
 #include <assert.h>
+#include <limits.h>
 #include <pthread.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +19,7 @@
 
 void test_alloc_mem_node(void) { // NOLINT(readability-function-cognitive-complexity)
     PRINT_TEST_NAME;
-    const size_t mem_size = 471;
+    const uint32_t mem_size = 471;
     struct MemPool pool;
     struct MemNode *node = alloc_poolable_mem(&pool, mem_size);
 
@@ -38,7 +39,7 @@ void test_alloc_mem_node(void) { // NOLINT(readability-function-cognitive-comple
 void test_get_memnode_in_data(void) {
     PRINT_TEST_NAME;
     struct MemPool pool;
-    const size_t mem_size = 1024;
+    const uint32_t mem_size = 1024;
     struct MemNode *node = alloc_poolable_mem(&pool, mem_size);
 
     struct MemNode *node_in_data = get_memnode_in_data(node->data);
@@ -48,7 +49,7 @@ void test_get_memnode_in_data(void) {
 
 void test_create_pool(void) {
     PRINT_TEST_NAME;
-    const size_t alloc_size = 4762;
+    const uint32_t alloc_size = 4762;
     struct MemPool *pool = alloc_mem_pool(alloc_size);
     ASSERT_MSG(pool->mem_size == alloc_size, "the new pool should the correct size set");
     ASSERT_MSG(pool->head == NULL, "new pool should have a null head");
@@ -59,7 +60,7 @@ void test_create_pool(void) {
 void test_acquire_empty_pool(void) {
     PRINT_TEST_NAME;
 
-    const size_t alloc_size = 971;
+    const uint32_t alloc_size = 971;
     struct MemPool *pool = alloc_mem_pool(alloc_size);
 
     void *data = pool_mem_acquire(pool);
@@ -77,7 +78,7 @@ void test_acquire_empty_pool(void) {
 void test_acquire_and_return_once(void) { // NOLINT(readability-function-cognitive-complexity)
     PRINT_TEST_NAME;
 
-    const size_t alloc_size = 377;
+    const uint32_t alloc_size = 377;
     struct MemPool *pool = alloc_mem_pool(alloc_size);
 
     void *data = pool_mem_acquire(pool);
@@ -99,7 +100,7 @@ void test_acquire_and_return_once(void) { // NOLINT(readability-function-cogniti
 void test_returned_mem_can_be_reused(void) { // NOLINT(readability-function-cognitive-complexity)
     PRINT_TEST_NAME;
 
-    const size_t alloc_size = 1024;
+    const uint32_t alloc_size = 1024;
     struct MemPool *pool = alloc_mem_pool(alloc_size);
 
     void *first_acquired = pool_mem_acquire(pool);
@@ -116,7 +117,7 @@ void test_returned_mem_can_be_reused(void) { // NOLINT(readability-function-cogn
 
 void test_acquire_return_many_single_thread(void) { // NOLINT(readability-function-cognitive-complexity)
     PRINT_TEST_NAME;
-    const size_t alloc_size = 1024;
+    const uint32_t alloc_size = 1024;
     struct MemPool *pool = alloc_mem_pool(alloc_size);
     const uint32_t mem_count = 12;
     void *acquired_mem[mem_count];
@@ -178,7 +179,7 @@ void test_acquire_return_many_multi_threaded(void) { // NOLINT(readability-funct
     PRINT_TEST_NAME;
 
     const uint32_t num_runners = 4;
-    const size_t memnode_size = 64;
+    const uint32_t memnode_size = 64;
     pthread_t runners[num_runners];
 
     struct MemPool *pool = alloc_mem_pool(memnode_size);
@@ -219,6 +220,18 @@ void test_acquire_return_many_multi_threaded(void) { // NOLINT(readability-funct
     free_mem_pool(pool);
 }
 
+void test_find_multipool_index_min_size(void) {
+    PRINT_TEST_NAME;
+
+    // anything less or equal to DynPoolMinMultiPoolMemNodeSize should map the pool at position zero
+
+    const uint32_t max_size = 1 << DynPoolMinMultiPoolMemNodeSizeBits;
+    for (uint32_t size = 1; size <= max_size; size++) {
+        uint32_t index = find_multipool_index_for_size(size);
+        ASSERT_MSG(index == 0, "sizes less or equal to DynPoolMinMultiPoolMemNodeSize should map to index zero");
+    }
+}
+
 int main(void) {
     // memory node allocation
     test_alloc_mem_node();
@@ -231,4 +244,7 @@ int main(void) {
     test_returned_mem_can_be_reused();
     test_acquire_return_many_single_thread();
     test_acquire_return_many_multi_threaded();
+
+    // multi pool
+    test_find_multipool_index_min_size();
 }

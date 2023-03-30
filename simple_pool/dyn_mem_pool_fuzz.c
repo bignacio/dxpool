@@ -19,11 +19,11 @@ void print_mem_usage(void) {
 void fuzz_alloc_free_poolable_mem(void) {
     const int run_count = 20000;
 
-    const size_t sizes[] = {
+    const uint32_t sizes[] = {
         64, 512, 1024, 16384, 65536, 524288, 1048576,
     };
 
-    const int size_count = sizeof(sizes) / sizeof(size_t);
+    const int size_count = sizeof(sizes) / sizeof(uint32_t);
 
     print_mem_usage();
     printf("running alloc and free poolable memory tests. sizes=%d, iterations=%d\n", size_count, run_count);
@@ -31,7 +31,7 @@ void fuzz_alloc_free_poolable_mem(void) {
     struct MemPool pool;
     for (int i = 0; i < run_count; i++) {
         for (int s_index = 0; s_index < size_count; s_index++) {
-            size_t size = sizes[s_index];
+            uint32_t size = sizes[s_index];
             struct MemNode *node = alloc_poolable_mem(&pool, size);
             free_poolable_mem(node);
         }
@@ -41,7 +41,7 @@ void fuzz_alloc_free_poolable_mem(void) {
 }
 
 void fuzz_acquire_release_single_threaded(void) {
-    const size_t alloc_size = 773;
+    const uint32_t alloc_size = 773;
     struct MemPool *pool = alloc_mem_pool(alloc_size);
     const int mem_count = 113;
     void *acquired_mem[mem_count];
@@ -49,7 +49,7 @@ void fuzz_acquire_release_single_threaded(void) {
     const int run_count = 97;
 
     print_mem_usage();
-    printf("running acquire and release cycles. iterations=%d, alloc size=%zu\n", run_count, alloc_size);
+    printf("running acquire and release cycles. iterations=%d, alloc size=%d\n", run_count, alloc_size);
 
     for (int run = 0; run < run_count; run++) {
         // acquire, release, aquire
@@ -108,11 +108,11 @@ void *pool_acquire_return_fn(void *arg) {
 
 void fuzz_acquire_release_multi_threaded(void) {
     const uint32_t num_runners = 32;
-    const size_t memnode_size = 32;
+    const uint32_t memnode_size = 32;
     pthread_t runners[num_runners];
 
     print_mem_usage();
-    printf("running multithreaded acquire and release cycles. runners=%d, alloc size=%zu\n", num_runners, memnode_size);
+    printf("running multithreaded acquire and release cycles. runners=%d, alloc size=%d\n", num_runners, memnode_size);
 
     struct MemPool *pool = alloc_mem_pool(memnode_size);
 
