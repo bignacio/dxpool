@@ -232,6 +232,26 @@ void test_find_multipool_index_min_size(void) {
     }
 }
 
+void test_find_multipool_index_powerof2_sizes(void) {
+    PRINT_TEST_NAME;
+
+    int bit_count = DynPoolMinMultiPoolMemNodeSizeBits;
+    const int max_bits = ((int)sizeof(uint32_t) * CHAR_BIT) - bit_count;
+
+    for (int i = bit_count; i < max_bits; i++) {
+        uint32_t size = 1 << i;
+
+        uint32_t index = find_multipool_index_for_size(size);
+        ASSERT_MSG((index == (uint32_t)(i - bit_count)), "size equal to power of 2 should match index");
+
+        index = find_multipool_index_for_size(size - 1);
+        ASSERT_MSG((index == (uint32_t)(i - bit_count)), "size one less than power of 2 should match index");
+
+        index = find_multipool_index_for_size(size + 1);
+        ASSERT_MSG((index == (uint32_t)(i - bit_count) + 1), "size one plus power of 2 should match next index");
+    }
+}
+
 int main(void) {
     // memory node allocation
     test_alloc_mem_node();
@@ -247,4 +267,5 @@ int main(void) {
 
     // multi pool
     test_find_multipool_index_min_size();
+    test_find_multipool_index_powerof2_sizes();
 }

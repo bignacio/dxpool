@@ -184,7 +184,7 @@ void pool_mem_return(void* data) {
 */
 
 // Minium amount of byes allocated in a multi pool setup
-static const uint32_t DynPoolMinMultiPoolMemNodeSizeBits = 9;
+static const int DynPoolMinMultiPoolMemNodeSizeBits = 9;
 
 /**
  * @brief Finds the index of the pool where a memory node of size `size` can be allocated
