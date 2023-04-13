@@ -9,12 +9,6 @@
 #include <limits.h>
 #include <sys/types.h>
 
-enum {
-    NODE_ALIGNMENT = 16,
-    CACHE_LINE_SIZE = 64,
-};
-
-
 struct MemNode {
     struct MemNode* next;
     void *data;
@@ -64,6 +58,7 @@ static inline struct MemNode* get_memnode_in_data(void* data) {
 __attribute__((malloc,warn_unused_result))
 struct MemNode* alloc_poolable_mem(struct MemPool* pool, uint32_t size) {
     assert(pool != NULL);
+    assert(size != 0);
 
     struct MemNode* node = malloc(sizeof(struct MemNode));
     if (node == NULL) {
@@ -210,7 +205,7 @@ enum {
 };
 
 struct MultiPool {
-    struct MemPool pools[MULTIPOOL_ENTRY_COUNT];
+    struct MemPool* pools[MULTIPOOL_ENTRY_COUNT];
 };
 
 
@@ -221,13 +216,17 @@ struct MultiPool {
  */
 __attribute__((warn_unused_result))
 struct MultiPool* multipool_create(void) {
-    struct MultiPool* pool = malloc(sizeof(struct MultiPool));
+    struct MultiPool* multipool = malloc(sizeof(struct MultiPool));
 
-    if(pool != NULL) {
-        memset(pool, 0, sizeof(struct MultiPool));
+    if(multipool != NULL) {
+        for(uint32_t i = 0 ; i < MULTIPOOL_ENTRY_COUNT ; i++) {
+            uint32_t size = 1 << ((uint32_t)DynPoolMinMultiPoolMemNodeSizeBits+i);
+            struct MemPool* pool = alloc_mem_pool(size);
+            multipool->pools[i] = pool;
+        }
     }
 
-    return pool;
+    return multipool;
 }
 
 /**
@@ -239,7 +238,7 @@ void multipool_free(struct MultiPool* multipool) {
     assert(multipool != NULL);
 
     for(int i = 0 ; i < MULTIPOOL_ENTRY_COUNT ; i++) {
-        pool_mem_free_all(&multipool->pools[i]);
+        free_mem_pool(multipool->pools[i]);
     }
     free(multipool);
 }
@@ -272,10 +271,42 @@ void* multipool_mem_acquire(struct MultiPool* multipool, uint32_t size) {
     if (__builtin_expect(index >= MULTIPOOL_ENTRY_COUNT, 0)) {
         return NULL;
     }
-    struct MemPool* pool = &multipool->pools[index];
+    struct MemPool* pool = multipool->pools[index];
 
     return pool_mem_acquire(pool);
 }
 
+/**
+ * @brief Global multipool support
+ *
+ */
+struct MultiPool* _global_multipool = NULL; //NOLINT(bugprone-reserved-identifier, cppcoreguidelines-avoid-non-const-global-variables)
+
+/**
+ * @brief Create the global multipool
+ *
+ */
+void global_multipool_create(void) {
+    _global_multipool = multipool_create();
+}
+
+/**
+ * @brief Acquires a block of memory from the global multipool. Acquired memory should be returned calling pool_mem_return
+ *
+ * @param size of block to be acquired
+ * @return void* pointer to acquired block
+ */
+void* global_multipool_mem_acquire(uint32_t size) {
+    assert(_global_multipool != NULL);
+    return multipool_mem_acquire(_global_multipool, size);
+}
+
+/**
+ * @brief Destroys the global multipool releasing all memory stored in the pool
+ *
+ */
+void global_multipool_free(void) {
+    multipool_free(_global_multipool);
+}
 
 #endif //DYN_MEM_POOL_H

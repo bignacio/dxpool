@@ -267,6 +267,18 @@ void test_multipool_index_bounds(void) {
     ASSERT_MSG(max_index == MULTIPOOL_ENTRY_COUNT - 1, "max index should be MULTIPOOL_ENTRY_COUNT - 1");
 }
 
+void test_multipool_create(void) {
+    struct MultiPool *multipool = multipool_create();
+
+    for (int i = 0; i < MULTIPOOL_ENTRY_COUNT; i++) {
+        struct MemPool *pool = multipool->pools[i];
+        uint32_t size = (uint32_t)(1 << (DynPoolMinMultiPoolMemNodeSizeBits + i));
+        ASSERT_MSG(pool->mem_size == size, "multipool pools should have the correct size");
+    }
+
+    multipool_free(multipool);
+}
+
 void test_multipool_alloc(void) {
     PRINT_TEST_NAME;
     struct MultiPool *multipool = multipool_create();
@@ -276,8 +288,9 @@ void test_multipool_alloc(void) {
         uint32_t size = 1 << bit_count;
         int pool_index = bit_count - DynPoolMinMultiPoolMemNodeSizeBits;
 
+        struct MemPool *pool = multipool->pools[pool_index];
+
         void *data = multipool_mem_acquire(multipool, size);
-        struct MemPool *pool = &multipool->pools[pool_index];
         ASSERT_MSG(pool->num_allocs == 1, "multipool should have allocated one memory node");
 
         pool_mem_return(data);
@@ -285,6 +298,27 @@ void test_multipool_alloc(void) {
     }
 
     multipool_free(multipool);
+}
+
+void test_global_multipool_alloc(void) {
+    PRINT_TEST_NAME;
+    global_multipool_create();
+
+    // allocate one memory block for each entry in the pool
+    for (int bit_count = DynPoolMinMultiPoolMemNodeSizeBits; bit_count < (MULTIPOOL_ENTRY_COUNT + DynPoolMinMultiPoolMemNodeSizeBits); bit_count++) {
+        uint32_t size = 1 << bit_count;
+        int pool_index = bit_count - DynPoolMinMultiPoolMemNodeSizeBits;
+
+        void *data = global_multipool_mem_acquire(size);
+        struct MemPool *pool = _global_multipool->pools[pool_index];
+        ASSERT_MSG(pool->mem_size == size, "pool size should match alloc size");
+        ASSERT_MSG(pool->num_allocs == 1, "global multipool should have allocated one memory node");
+
+        pool_mem_return(data);
+        ASSERT_MSG(pool->num_available == 1, "global multipool should have returned one node");
+    }
+
+    global_multipool_free();
 }
 
 int main(void) {
@@ -304,5 +338,7 @@ int main(void) {
     test_find_multipool_index_min_size();
     test_find_multipool_index_powerof2_sizes();
     test_multipool_index_bounds();
+    test_multipool_create();
     test_multipool_alloc();
+    test_global_multipool_alloc();
 }
