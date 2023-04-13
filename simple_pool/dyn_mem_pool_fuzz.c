@@ -1,6 +1,7 @@
 #include "dyn_mem_pool.h"
 #include <assert.h>
 #include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #ifdef __linux__
@@ -143,6 +144,27 @@ void fuzz_acquire_release_multi_threaded(void) {
     print_mem_usage();
 }
 
+void fuzz_acquire_release_multipool(void) {
+    const int size_window = 64;
+    const int max_bits = (MULTIPOOL_ENTRY_COUNT + DynPoolMinMultiPoolMemNodeSizeBits) - 1;
+
+    print_mem_usage();
+    printf("running multipool acquire and release test. Size window = %d\n", size_window);
+
+    struct MultiPool *multipool = multipool_create();
+
+    for (int bit_count = DynPoolMinMultiPoolMemNodeSizeBits; bit_count < max_bits; bit_count++) {
+        for (int window_val = -size_window; window_val < size_window; window_val++) {
+            uint32_t size = (uint32_t)((1 << bit_count) + window_val);
+
+            void *data = multipool_mem_acquire(multipool, size);
+            pool_mem_return(data);
+        }
+    }
+
+    multipool_free(multipool);
+}
+
 int main(void) {
     printf("--\n");
     fuzz_alloc_free_poolable_mem();
@@ -152,4 +174,7 @@ int main(void) {
 
     printf("--\n");
     fuzz_acquire_release_multi_threaded();
+
+    printf("--\n");
+    fuzz_acquire_release_multipool();
 }

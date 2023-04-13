@@ -1,5 +1,6 @@
 #ifndef DYN_MEM_POOL_H
 #define DYN_MEM_POOL_H
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -53,6 +54,8 @@ void track_pool_usage_memnode_unavailable(__attribute__((unused)) struct MemPool
 }
 
 static inline struct MemNode* get_memnode_in_data(void* data) {
+    assert(data != NULL);
+
     ptrdiff_t *node_mem_val = ((ptrdiff_t *)data) - 1;
     struct MemNode *node = (struct MemNode *)(node_mem_val[0]); // NOLINT(performance-no-int-to-ptr)
     return node;
@@ -60,10 +63,13 @@ static inline struct MemNode* get_memnode_in_data(void* data) {
 
 __attribute__((malloc,warn_unused_result))
 struct MemNode* alloc_poolable_mem(struct MemPool* pool, uint32_t size) {
+    assert(pool != NULL);
+
     struct MemNode* node = malloc(sizeof(struct MemNode));
     if (node == NULL) {
         return NULL;
     }
+
     node->next = NULL;
     ptrdiff_t* ptr_data = malloc(size + sizeof(ptrdiff_t));
 
@@ -80,6 +86,8 @@ struct MemNode* alloc_poolable_mem(struct MemPool* pool, uint32_t size) {
 }
 
 void free_poolable_mem(struct MemNode* node) {
+    assert(node != NULL);
+
     // we need to restore all the allocated memory
     ptrdiff_t* ptr_data = node->data;
     void* node_data = ptr_data-1;
@@ -114,6 +122,8 @@ struct MemPool* alloc_mem_pool(uint32_t size) {
  * This function is not thread safe and should be only invoked when the pool is destroyed
  */
 void pool_mem_free_all(struct MemPool* pool) {
+    assert(pool != NULL);
+
     struct MemNode* node = pool->head;
     while(node != NULL) {
         pool->head = node->next;
@@ -121,10 +131,11 @@ void pool_mem_free_all(struct MemPool* pool) {
         track_pool_usage_memnode_unavailable(pool);
         node = pool->head;
     }
-
 }
 
 void free_mem_pool(struct MemPool* pool) {
+    assert(pool != NULL);
+
     pool_mem_free_all(pool);
     free(pool);
 }
@@ -132,6 +143,8 @@ void free_mem_pool(struct MemPool* pool) {
 // MemPool acquire and return operations
 __attribute__((warn_unused_result))
 void* pool_mem_try_alloc_data(struct MemPool* pool)  {
+    assert(pool != NULL);
+
     struct MemNode* node = alloc_poolable_mem(pool, pool->mem_size);
     if(node == NULL) {
         return NULL;
@@ -149,6 +162,8 @@ void* pool_mem_try_alloc_data(struct MemPool* pool)  {
  */
 __attribute__((warn_unused_result))
 void* pool_mem_acquire(struct MemPool* pool) {
+    assert(pool != NULL);
+
     while (true) {
         struct MemNode* previous_head = __atomic_load_n(&pool->head, __ATOMIC_ACQUIRE);
         if (previous_head == NULL) {
@@ -160,11 +175,12 @@ void* pool_mem_acquire(struct MemPool* pool) {
             track_pool_usage_memnode_unavailable(pool);
             return previous_head->data;
         }
-
     }
 }
 
 void pool_mem_return(void* data) {
+    assert(data != NULL);
+
     struct MemNode* new_head = get_memnode_in_data(data);
     struct MemPool* pool = new_head->pool;
 
@@ -183,8 +199,50 @@ void pool_mem_return(void* data) {
     at the expense of extra allocated memory if the requested size doesn't match the defined pool memory size
 */
 
-// Minium amount of byes allocated in a multi pool setup
+
+// Number of bits indicating the minimum amount of bytes allocated in a multi pool setup
 static const int DynPoolMinMultiPoolMemNodeSizeBits = 9;
+
+
+enum {
+    // 23 bits = 4Mb max with the first 9 mapping to the first pool
+    MULTIPOOL_ENTRY_COUNT = 14
+};
+
+struct MultiPool {
+    struct MemPool pools[MULTIPOOL_ENTRY_COUNT];
+};
+
+
+/**
+ * @brief Allocates a new multi pool with a maximum of MULTIPOOL_ENTRY_COUNT entries
+ *
+ * @return the created multi pool
+ */
+__attribute__((warn_unused_result))
+struct MultiPool* multipool_create(void) {
+    struct MultiPool* pool = malloc(sizeof(struct MultiPool));
+
+    if(pool != NULL) {
+        memset(pool, 0, sizeof(struct MultiPool));
+    }
+
+    return pool;
+}
+
+/**
+ * @brief Releases all memory owned by a multi pool, including individual pool items
+ *
+ * @param multipool
+ */
+void multipool_free(struct MultiPool* multipool) {
+    assert(multipool != NULL);
+
+    for(int i = 0 ; i < MULTIPOOL_ENTRY_COUNT ; i++) {
+        pool_mem_free_all(&multipool->pools[i]);
+    }
+    free(multipool);
+}
 
 /**
  * @brief Finds the index of the pool where a memory node of size `size` can be allocated
@@ -197,5 +255,27 @@ uint32_t find_multipool_index_for_size(uint32_t size) {
     uint32_t size_value = (size - 1) >>DynPoolMinMultiPoolMemNodeSizeBits;
     return (int32bitcount - (uint32_t)__builtin_clz(size_value));
 }
+
+/**
+ * @brief Acquire memory in a multipool setup. Acquired memory should be returned calling pool_mem_return
+ *
+ * @param multipool the multipool to be used
+ * @param size size of the memory allocated. It will be rounded up to the next power of 2 bit
+ * @return void* allocated memory or NULL if allocation fail
+ */
+void* multipool_mem_acquire(struct MultiPool* multipool, uint32_t size) {
+    assert(multipool != NULL);
+
+    uint32_t index = find_multipool_index_for_size(size);
+
+    assert(index < MULTIPOOL_ENTRY_COUNT);
+    if (__builtin_expect(index >= MULTIPOOL_ENTRY_COUNT, 0)) {
+        return NULL;
+    }
+    struct MemPool* pool = &multipool->pools[index];
+
+    return pool_mem_acquire(pool);
+}
+
 
 #endif //DYN_MEM_POOL_H

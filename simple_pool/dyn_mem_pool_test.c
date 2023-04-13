@@ -224,7 +224,6 @@ void test_find_multipool_index_min_size(void) {
     PRINT_TEST_NAME;
 
     // anything less or equal to DynPoolMinMultiPoolMemNodeSize should map the pool at position zero
-
     const uint32_t max_size = 1 << DynPoolMinMultiPoolMemNodeSizeBits;
     for (uint32_t size = 1; size <= max_size; size++) {
         uint32_t index = find_multipool_index_for_size(size);
@@ -252,6 +251,42 @@ void test_find_multipool_index_powerof2_sizes(void) {
     }
 }
 
+void test_multipool_index_bounds(void) {
+    PRINT_TEST_NAME;
+    const uint32_t min_size = 1 << DynPoolMinMultiPoolMemNodeSizeBits;
+    const uint32_t after_min_size = 1 << (DynPoolMinMultiPoolMemNodeSizeBits + 1);
+    const uint32_t max_size = 1 << (MULTIPOOL_ENTRY_COUNT + DynPoolMinMultiPoolMemNodeSizeBits - 1);
+
+    uint32_t min_index = find_multipool_index_for_size(min_size);
+    ASSERT_MSG(min_index == 0, "min index should be zero");
+
+    uint32_t after_min_index = find_multipool_index_for_size(after_min_size);
+    ASSERT_MSG(after_min_index == 1, "after min index should be 1");
+
+    uint32_t max_index = find_multipool_index_for_size(max_size);
+    ASSERT_MSG(max_index == MULTIPOOL_ENTRY_COUNT - 1, "max index should be MULTIPOOL_ENTRY_COUNT - 1");
+}
+
+void test_multipool_alloc(void) {
+    PRINT_TEST_NAME;
+    struct MultiPool *multipool = multipool_create();
+
+    // allocate one memory block for each entry in the pool
+    for (int bit_count = DynPoolMinMultiPoolMemNodeSizeBits; bit_count < (MULTIPOOL_ENTRY_COUNT + DynPoolMinMultiPoolMemNodeSizeBits); bit_count++) {
+        uint32_t size = 1 << bit_count;
+        int pool_index = bit_count - DynPoolMinMultiPoolMemNodeSizeBits;
+
+        void *data = multipool_mem_acquire(multipool, size);
+        struct MemPool *pool = &multipool->pools[pool_index];
+        ASSERT_MSG(pool->num_allocs == 1, "multipool should have allocated one memory node");
+
+        pool_mem_return(data);
+        ASSERT_MSG(pool->num_available == 1, "multipool should have returned one node");
+    }
+
+    multipool_free(multipool);
+}
+
 int main(void) {
     // memory node allocation
     test_alloc_mem_node();
@@ -268,4 +303,6 @@ int main(void) {
     // multi pool
     test_find_multipool_index_min_size();
     test_find_multipool_index_powerof2_sizes();
+    test_multipool_index_bounds();
+    test_multipool_alloc();
 }
