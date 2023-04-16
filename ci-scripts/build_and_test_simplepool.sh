@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd simple_pool
 rm -rf build
 
 for build_type in Release Debug ; do
