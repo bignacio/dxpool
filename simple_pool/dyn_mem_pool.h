@@ -313,6 +313,9 @@ void multipool_free(struct MultiPool* multipool) {
 uint32_t find_multipool_index_for_size(uint32_t size) {
     static const uint32_t int32bitcount = sizeof(uint32_t) * CHAR_BIT;
     uint32_t size_value = (size - 1) >>DynPoolMinMultiPoolMemNodeSizeBits;
+    if( __builtin_expect(size_value == 0, 0)) {
+        return 0;
+    }
     return (int32bitcount - (uint32_t)__builtin_clz(size_value));
 }
 
