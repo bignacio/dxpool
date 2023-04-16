@@ -1,5 +1,6 @@
 /*
     Dynamic memory pool C library
+    https://github.com/bignacio/dxpool
 */
 
 #ifndef DYN_MEM_POOL_H
