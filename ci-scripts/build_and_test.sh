@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 rm -rf build
 
 for build_type in Release Debug ; do

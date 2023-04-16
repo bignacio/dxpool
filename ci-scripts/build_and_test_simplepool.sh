@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 cd simple_pool
 rm -rf build
 
