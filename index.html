@@ -137,19 +137,23 @@ The object pool</h1>
 <p>This an intentional design decision, for the time being, and applies best to uses cases where memory usage must be consistent and deterministic.</p>
 <p>The <code>StaticPool</code> statically allocates the pool size and its elements. In this case, the pool size is provided as a template parameter.</p>
 <p>The <code>RuntimePool</code> permits developers to specify the size of the pool at runtime but in this case, the type of the objects in the pool must be *move constructible (note the pool size still won't change after its construction).</p>
-<h2><a class="anchor" id="autotoc_md8"></a>
+<h1><a class="anchor" id="autotoc_md8"></a>
+The dynamic memory pool</h1>
+<p>The Simple Pool dynamic memory pool library is a pure C, header only library that allows dynamic allocation of new pool entries. Though all memory blocks in the same pool are of the same size, the number of entries in the pool is not limited, unlike the C++ object pool implementation. The Simple Pool library is thread-safe.</p>
+<p>Including the header <a href="simple_pool/dyn_mem_pool.h"><code>dyn_mem_pool.h</code></a> is all that is required and the directory [simple_pool](simple_pool) contains examples for how to use the pool;</p>
+<h2><a class="anchor" id="autotoc_md9"></a>
 Concurrency support</h2>
 <p>All object pools are thread safe and allow different mechanisms for data safety via what is called an <code>Indexer</code>.</p>
 <p>The <code>MutexIndexer</code> is the default mechanism and, as the name suggests, is backed by an <code>std::mutex</code>.</p>
 <p>The <b>experimental</b> <code>ConcurrentIndexer</code> users lock free patterns for data safety and even though it is not lock free (due to the presence of a spin lock), the <code>ConcurrentIndexer</code> substantially reduces the probability that a thread would block making it ideal for high concurrency situations.</p>
 <p>The <code>ConcurrentIndexer</code> can be between 20% and 30% than the <code>MutexIndexer</code> faster due to fewer points of contention accessing the pool.</p>
 <p>You can use the [benchmark tests](benchmark) to verify the nominal execution performance on your target systems.</p>
-<h2><a class="anchor" id="autotoc_md9"></a>
+<h2><a class="anchor" id="autotoc_md10"></a>
 Retrieving and returning items</h2>
 <p>Items retrieved from the pool are wrapped in a <code>PoolType</code> object that has <code>Empty() == true</code> if there are no available objects in the pool. Retrieving items from the pool will never block waiting for an available item.</p>
 <p>Items are returned to the pool automatically through RIIA and allow for custom code to be invoked and reset items before returning them to the pool.</p>
 <p>For more details consult [examples](examples), [tests](test) and the API <a href="https://bignacio.github.io/dxpool">documentation</a>.</p>
-<h2><a class="anchor" id="autotoc_md10"></a>
+<h2><a class="anchor" id="autotoc_md11"></a>
 Putting it all together</h2>
 <p>Declaring and using an static pool </p><div class="fragment"><div class="line">#include &quot;IndexHolder.h&quot;</div>
 <div class="line">#include &quot;MutexIndexer.h&quot;</div>
@@ -171,7 +175,7 @@ Putting it all together</h2>
 <div class="line">dxpool::RuntimePool&lt;std::array&lt;char, 10&gt;, ConcurrentIndexer&gt; pool(10);</div>
 <div class="line">// use the pool here</div>
 <div class="line">...</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md11"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md12"></a>
 The worker pool</h1>
 <p>The worker pool creates a fixed set of threads, each with specific core affinity.</p>
 <p>The <code>Processor</code> interface allow the interrogation of supported cores and NUMA nodes that can then be passed to an instance of the <code>WorkerPoolBuilder</code> which in turn will create the pool threads with the desire affinity for specific cores or an entire NUMA node. The builder allows creating a set of workers for either a NUMA node or a set of cores but not both. The builder will throw <code>InvalidWorkerPoolBuilderArgumentsError</code> in case of a mismatch in the pool configuration.</p>
@@ -206,7 +210,7 @@ The worker pool</h1>
 <div class="line">                .WithThreadsPerCore(2)</div>
 <div class="line">                .Build();</div>
 </div><!-- fragment --><p>For more details consult [examples](examples), [tests](test) and the API <a href="https://bignacio.github.io/dxpool">documentation</a>.</p>
-<h2><a class="anchor" id="autotoc_md12"></a>
+<h2><a class="anchor" id="autotoc_md13"></a>
 Notes on task execution</h2>
 <p>Upon calling <code>Submit</code> tasks are added to a task queue and executed when there's an available worker.</p>
 <p>This means tasks are not executed immediately and can even starve if workers never become available.</p>

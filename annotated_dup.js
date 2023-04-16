@@ -14,5 +14,8 @@ var annotated_dup =
       [ "WorkerPool", "d5/d2a/classdxpool_1_1WorkerPool.html", "d5/d2a/classdxpool_1_1WorkerPool" ],
       [ "WorkerPoolBuilder", "da/d3c/classdxpool_1_1WorkerPoolBuilder.html", "da/d3c/classdxpool_1_1WorkerPoolBuilder" ],
       [ "WorkQueue", "df/d96/classdxpool_1_1WorkQueue.html", "df/d96/classdxpool_1_1WorkQueue" ]
-    ] ]
+    ] ],
+    [ "MemNode", "de/dec/structMemNode.html", "de/dec/structMemNode" ],
+    [ "MemPool", "d2/d33/structMemPool.html", "d2/d33/structMemPool" ],
+    [ "MultiPool", "d9/df6/structMultiPool.html", "d9/df6/structMultiPool" ]
 ];

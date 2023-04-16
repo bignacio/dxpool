@@ -1,0 +1,5 @@
+<map id="MultiPool" name="MultiPool">
+<area shape="rect" id="node1" title="Multipool struct containing various pools of different sizes." alt="" coords="5,95,88,121"/>
+<area shape="rect" id="node2" href="$d2/d33/structMemPool.html" title="Memory pool entry point. All entries in the pool have the same allocated memory size." alt="" coords="76,5,159,32"/>
+<area shape="rect" id="node3" href="$de/dec/structMemNode.html" title="Pool linked list node containing a pointer to the allocated memory and the next available item in the..." alt="" coords="125,95,214,121"/>
+</map>

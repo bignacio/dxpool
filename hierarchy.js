@@ -6,6 +6,9 @@ var hierarchy =
     [ "std::invalid_argument", null, [
       [ "dxpool::InvalidWorkerPoolBuilderArgumentsError", "d8/de7/classdxpool_1_1InvalidWorkerPoolBuilderArgumentsError.html", null ]
     ] ],
+    [ "MemNode", "de/dec/structMemNode.html", null ],
+    [ "MemPool", "d2/d33/structMemPool.html", null ],
+    [ "MultiPool", "d9/df6/structMultiPool.html", null ],
     [ "dxpool::MutexIndexer", "d7/d8c/classdxpool_1_1MutexIndexer.html", null ],
     [ "dxpool::NUMANode", "d2/d53/classdxpool_1_1NUMANode.html", null ],
     [ "dxpool::Pool< ItemType, ItemContainerType, Indexer, FixedPoolSize >", "d6/d9c/classdxpool_1_1Pool.html", null ],

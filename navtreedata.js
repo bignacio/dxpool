@@ -33,20 +33,21 @@ var NAVTREE =
         [ "Using <tt>CMake</tt>", "index.html#autotoc_md5", null ],
         [ "Using Conan", "index.html#autotoc_md6", null ]
       ] ],
-      [ "The object pool", "index.html#autotoc_md7", [
-        [ "Concurrency support", "index.html#autotoc_md8", null ],
-        [ "Retrieving and returning items", "index.html#autotoc_md9", null ],
-        [ "Putting it all together", "index.html#autotoc_md10", null ]
+      [ "The object pool", "index.html#autotoc_md7", null ],
+      [ "The dynamic memory pool", "index.html#autotoc_md8", [
+        [ "Concurrency support", "index.html#autotoc_md9", null ],
+        [ "Retrieving and returning items", "index.html#autotoc_md10", null ],
+        [ "Putting it all together", "index.html#autotoc_md11", null ]
       ] ],
-      [ "The worker pool", "index.html#autotoc_md11", [
-        [ "Notes on task execution", "index.html#autotoc_md12", null ]
+      [ "The worker pool", "index.html#autotoc_md12", [
+        [ "Notes on task execution", "index.html#autotoc_md13", null ]
       ] ]
     ] ],
     [ "Code of conduct", "d3/d5c/md_CODE_OF_CONDUCT.html", null ],
     [ "Contributing to the repository", "d2/dc1/md_CONTRIBUTING.html", [
-      [ "Minimum environment support", "d2/dc1/md_CONTRIBUTING.html#autotoc_md15", null ],
-      [ "Requirements", "d2/dc1/md_CONTRIBUTING.html#autotoc_md16", null ],
-      [ "Testing and benchmarking", "d2/dc1/md_CONTRIBUTING.html#autotoc_md17", null ]
+      [ "Minimum environment support", "d2/dc1/md_CONTRIBUTING.html#autotoc_md16", null ],
+      [ "Requirements", "d2/dc1/md_CONTRIBUTING.html#autotoc_md17", null ],
+      [ "Testing and benchmarking", "d2/dc1/md_CONTRIBUTING.html#autotoc_md18", null ]
     ] ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],

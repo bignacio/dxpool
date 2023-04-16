@@ -1,0 +1,4 @@
+<map id="MemPool" name="MemPool">
+<area shape="rect" id="node1" title="Memory pool entry point. All entries in the pool have the same allocated memory size." alt="" coords="9,5,91,32"/>
+<area shape="rect" id="node2" href="$de/dec/structMemNode.html" title="Pool linked list node containing a pointer to the allocated memory and the next available item in the..." alt="" coords="5,95,95,121"/>
+</map>
