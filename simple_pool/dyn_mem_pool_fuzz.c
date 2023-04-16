@@ -32,8 +32,10 @@ void fuzz_alloc_free_poolable_mem(void) {
     struct MemPool pool;
     for (int i = 0; i < run_count; i++) {
         for (int s_index = 0; s_index < size_count; s_index++) {
-            uint32_t size = sizes[s_index];
-            struct MemNode *node = alloc_poolable_mem(&pool, size);
+            // assign size directly for testing purposes only
+            pool.mem_size = sizes[s_index];
+
+            struct MemNode *node = alloc_poolable_mem(&pool);
             free_poolable_mem(node);
         }
     }

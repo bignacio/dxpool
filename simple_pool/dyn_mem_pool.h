@@ -1,3 +1,7 @@
+/*
+    Dynamic memory pool C library
+*/
+
 #ifndef DYN_MEM_POOL_H
 #define DYN_MEM_POOL_H
 #include <assert.h>
@@ -9,6 +13,11 @@
 #include <limits.h>
 #include <sys/types.h>
 
+
+/**
+ * @brief Pool linked list node containing a pointer to the allocated memory and the next available item in the pool, if any
+ *
+ */
 struct MemNode {
     struct MemNode* next;
     void *data;
@@ -16,6 +25,10 @@ struct MemNode {
 } ;
 
 
+/**
+ * @brief Memory pool entry point. All entries in the pool have the same allocated memory size
+ *
+ */
 struct MemPool {
     struct MemNode* head;
     uint32_t mem_size;
@@ -47,6 +60,13 @@ void track_pool_usage_memnode_unavailable(__attribute__((unused)) struct MemPool
 #endif
 }
 
+/**
+ * @brief Returns a pointer to the MemNode struct associated with a given data pointer.
+ * The MemNode struct is assumed to be located directly before the data pointer in memory. The function returns a pointer to the MemNode struct.
+ *
+ * @param data Pointer to the memory block for which to retrieve the associated MemNode struct.
+ * @return A pointer to the MemNode struct associated with the given data pointer.
+ */
 static inline struct MemNode* get_memnode_in_data(void* data) {
     assert(data != NULL);
 
@@ -55,10 +75,16 @@ static inline struct MemNode* get_memnode_in_data(void* data) {
     return node;
 }
 
+/**
+ * @brief Allocates a new pool entry and the memory block it holds
+ *
+ * @param pool to store the newly allocated entry
+ * @return node with the allocated memory
+ */
 __attribute__((malloc,warn_unused_result))
-struct MemNode* alloc_poolable_mem(struct MemPool* pool, uint32_t size) {
+struct MemNode* alloc_poolable_mem(struct MemPool* pool) {
     assert(pool != NULL);
-    assert(size != 0);
+    assert(pool->mem_size != 0);
 
     struct MemNode* node = malloc(sizeof(struct MemNode));
     if (node == NULL) {
@@ -66,7 +92,7 @@ struct MemNode* alloc_poolable_mem(struct MemPool* pool, uint32_t size) {
     }
 
     node->next = NULL;
-    ptrdiff_t* ptr_data = malloc(size + sizeof(ptrdiff_t));
+    ptrdiff_t* ptr_data = malloc(pool->mem_size + sizeof(ptrdiff_t));
 
     if(ptr_data == NULL) {
         free(node);
@@ -80,6 +106,13 @@ struct MemNode* alloc_poolable_mem(struct MemPool* pool, uint32_t size) {
     return node;
 }
 
+/**
+ * @brief Frees a poolable memory node and all of its allocated memory.
+ *
+ * @param node The memory node to free.
+ *
+ * @pre `node` must not be `NULL`.
+ */
 void free_poolable_mem(struct MemNode* node) {
     assert(node != NULL);
 
@@ -115,6 +148,8 @@ struct MemPool* alloc_mem_pool(uint32_t size) {
 /**
  * @brief Free the memory used by all items in the pool and empties the pool.
  * This function is not thread safe and should be only invoked when the pool is destroyed
+ *
+ * @param pool containing the memory to be released
  */
 void pool_mem_free_all(struct MemPool* pool) {
     assert(pool != NULL);
@@ -128,6 +163,11 @@ void pool_mem_free_all(struct MemPool* pool) {
     }
 }
 
+/**
+ * @brief Frees a memory pool and all of its associated memory nodes.
+ *
+ * @param pool Pointer to the memory pool to be freed.
+ */
 void free_mem_pool(struct MemPool* pool) {
     assert(pool != NULL);
 
@@ -136,11 +176,18 @@ void free_mem_pool(struct MemPool* pool) {
 }
 
 // MemPool acquire and return operations
+/**
+ * @brief Try allocate a new pool node and memory block. The size of the memory block is the one set in the pool
+ * The function will return NULL if malloc fails
+ *
+ * @param pool containing the newly allocated entry and memory block
+ * @return void* pointer to the allocated memory block or NULL if malloc fails
+ */
 __attribute__((warn_unused_result))
 void* pool_mem_try_alloc_data(struct MemPool* pool)  {
     assert(pool != NULL);
 
-    struct MemNode* node = alloc_poolable_mem(pool, pool->mem_size);
+    struct MemNode* node = alloc_poolable_mem(pool);
     if(node == NULL) {
         return NULL;
     }
@@ -152,7 +199,7 @@ void* pool_mem_try_alloc_data(struct MemPool* pool)  {
 /**
  * @brief Acquire a block of memory from the pool. If the pool is empty, new memory will be allocated
  *
- * @param pool the memory pool where objects will be tracked
+ * @param pool the memory pool
  * @return void* pointer to allocated memory or NULL if memory cannot be allocated
  */
 __attribute__((warn_unused_result))
@@ -173,6 +220,11 @@ void* pool_mem_acquire(struct MemPool* pool) {
     }
 }
 
+/**
+ * Returns a previously allocated memory chunk back to the memory pool.
+ *
+ * @param data A pointer to the memory chunk to return to the pool
+ */
 void pool_mem_return(void* data) {
     assert(data != NULL);
 
@@ -199,11 +251,19 @@ void pool_mem_return(void* data) {
 static const int DynPoolMinMultiPoolMemNodeSizeBits = 9;
 
 
+/**
+ * @brief Maximum number of entries in a multipool. It alloes for a maximum of 4Mb memory block sizes
+ *
+ */
 enum {
     // 23 bits = 4Mb max with the first 9 mapping to the first pool
     MULTIPOOL_ENTRY_COUNT = 14
 };
 
+/**
+ * @brief Multipool struct containing various pools of different sizes
+ *
+ */
 struct MultiPool {
     struct MemPool* pools[MULTIPOOL_ENTRY_COUNT];
 };
@@ -232,7 +292,7 @@ struct MultiPool* multipool_create(void) {
 /**
  * @brief Releases all memory owned by a multi pool, including individual pool items
  *
- * @param multipool
+ * @param multipool to be released
  */
 void multipool_free(struct MultiPool* multipool) {
     assert(multipool != NULL);
@@ -247,7 +307,7 @@ void multipool_free(struct MultiPool* multipool) {
  * @brief Finds the index of the pool where a memory node of size `size` can be allocated
  *
  * @param size the size of the memory node to be allocated. If size is zero, the return value is undefined
- * @return uint32_t index of pool to hold the memory node
+ * @return index of pool to hold the memory node
  */
 uint32_t find_multipool_index_for_size(uint32_t size) {
     static const uint32_t int32bitcount = sizeof(uint32_t) * CHAR_BIT;

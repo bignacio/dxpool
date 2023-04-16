@@ -20,8 +20,8 @@
 void test_alloc_mem_node(void) { // NOLINT(readability-function-cognitive-complexity)
     PRINT_TEST_NAME;
     const uint32_t mem_size = 471;
-    struct MemPool pool;
-    struct MemNode *node = alloc_poolable_mem(&pool, mem_size);
+    struct MemPool pool = {.mem_size = mem_size};
+    struct MemNode *node = alloc_poolable_mem(&pool);
 
     ASSERT_MSG(node->data != NULL, "allocated data should not be null");
     ASSERT_MSG(node->next == NULL, "next node should be null");
@@ -38,9 +38,9 @@ void test_alloc_mem_node(void) { // NOLINT(readability-function-cognitive-comple
 
 void test_get_memnode_in_data(void) {
     PRINT_TEST_NAME;
-    struct MemPool pool;
     const uint32_t mem_size = 1024;
-    struct MemNode *node = alloc_poolable_mem(&pool, mem_size);
+    struct MemPool pool = {.mem_size = mem_size};
+    struct MemNode *node = alloc_poolable_mem(&pool);
 
     struct MemNode *node_in_data = get_memnode_in_data(node->data);
 
