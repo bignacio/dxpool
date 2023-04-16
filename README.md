@@ -69,8 +69,8 @@ The `RuntimePool` permits developers to specify the size of the pool at runtime 
 
 ## The dynamic memory pool
 
-The dynamic memory pool library is a pure C, header only library that allows dynamic allocation of new pool entries. Though all memory blocks in the same pool are of the same size, the number of entries in the pool is not limited, unlike the C++ object pool implementation.
-The library is thread-safe.
+The Simple Pool dynamic memory pool library is a pure C, header only library that allows dynamic allocation of new pool entries. Though all memory blocks in the same pool are of the same size, the number of entries in the pool is not limited, unlike the C++ object pool implementation.
+The Simple Pool library is thread-safe.
 
 Including the header [`dyn_mem_pool.h`](simple_pool/dyn_mem_pool.h) is all that is required and the directory [simple_pool](simple_pool) contains examples for how to use the pool;
 
