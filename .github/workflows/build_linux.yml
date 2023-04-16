@@ -41,5 +41,5 @@ jobs:
     - name: Build and test
       env:
         CC: ${{matrix.compiler}}
-        #CXX: clang++-15
+        CXX: clang++-15 # needed to make cmake happy
       run: ci-scripts/build_and_test_simplepool.sh
