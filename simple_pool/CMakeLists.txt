@@ -19,7 +19,6 @@ add_compile_options(
     -Wimplicit-fallthrough
     -Wundef
     -Wfloat-equal
-    -march=native
     -fPIE
     -fno-omit-frame-pointer
 )
