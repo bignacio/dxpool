@@ -20,7 +20,7 @@ jobs:
 
     - name: Build and test
       env:
-        CXX: ${{matrix.cxx_compiler}}
+        CXX: ${{matrix.compiler}}
       run: ci-scripts/build_and_test.sh
 
   build-simplepool-linux:
@@ -33,12 +33,12 @@ jobs:
         password: ${{ secrets.GHCR_PACKAGES_TOKEN }}
     strategy:
       matrix:
-        c_compiler: [gcc, clang]
+        compiler: [gcc-12, clang-15]
 
     steps:
     - uses: actions/checkout@v3
 
     - name: Build and test
       env:
-        CC: ${{matrix.c_compiler}}
+        CC: ${{matrix.compiler}}
       run: ci-scripts/build_and_test_simplepool.sh
