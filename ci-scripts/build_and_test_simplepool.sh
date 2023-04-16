@@ -2,10 +2,9 @@
 
 set -e
 cd simple_pool
-rm -rf build
 
 for build_type in Release Debug ; do
-    make -B build clean
+    rm -rf build
     cmake -B build -DCMAKE_BUILD_TYPE=${build_type}
 
     make -j2 -C build
