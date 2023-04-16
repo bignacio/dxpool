@@ -11,6 +11,6 @@ build/dyn_mem_pool_test
 build/dyn_mem_pool_fuzz
 build/dyn_mem_pool_fuzz_addr
 
-if [ "$CC" = "clang" ]; then
+if [ "$CC" = "clang-15" ]; then
     build/dyn_mem_pool_fuzz_mem
 fi
