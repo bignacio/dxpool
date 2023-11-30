@@ -105,9 +105,14 @@ $(document).ready(function(){initNavTree('dd/d94/Processor_8h_source.html','../.
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;} <span class="comment">// namespace dxpool</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="ttc" id="aclassdxpool_1_1ProcessorLinux_html"><div class="ttname"><a href="../../d8/d3b/classdxpool_1_1ProcessorLinux.html">dxpool::ProcessorLinux</a></div><div class="ttdoc">The ProcessorLinux class provides information about CPU cores and NUMA nodes on Linux.</div><div class="ttdef"><b>Definition:</b> ProcessorLinux.h:21</div></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">auto</span> GetAllAvailableCores() -&gt; std::set&lt;Core&gt; {</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    Processor processor;</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    <span class="keywordflow">return</span> processor.FindAvailableCores();</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;}</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;} <span class="comment">// namespace dxpool</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="ttc" id="aclassdxpool_1_1ProcessorLinux_html"><div class="ttname"><a href="../../d8/d3b/classdxpool_1_1ProcessorLinux.html">dxpool::ProcessorLinux</a></div><div class="ttdoc">The ProcessorLinux class provides information about CPU cores and NUMA nodes on Linux.</div><div class="ttdef"><b>Definition:</b> ProcessorLinux.h:20</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
