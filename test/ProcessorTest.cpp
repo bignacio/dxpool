@@ -75,4 +75,10 @@ TEST_CASE("Processor and NUMA nodes") { // NOLINT(cppcoreguidelines-avoid-non-co
         REQUIRE(actualAffinity == desiredAffinity);
     }
 
+
+    SECTION("Processor helper") {
+        const auto allCores = GetAllAvailableCores();
+
+        REQUIRE_FALSE(allCores.empty());
+    }
 }

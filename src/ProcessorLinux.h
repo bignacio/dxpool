@@ -1,7 +1,6 @@
 #ifndef PROCESSOR_LINUX_H
 #define PROCESSOR_LINUX_H
 
-#include <thread>
 #include <pthread.h>
 #include <sched.h>
 #include <set>

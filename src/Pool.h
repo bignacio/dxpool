@@ -4,13 +4,11 @@
 #include <type_traits>
 #include <vector>
 #include <array>
-#include <algorithm>
 #include <functional>
 
 #include "IndexHolder.h"
 #include "TypePolicies.h"
 #include "MutexIndexer.h"
-#include "ConcurrentIndexer.h"
 #include "PoolItem.h"
 
 namespace dxpool {

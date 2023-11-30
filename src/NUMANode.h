@@ -1,7 +1,6 @@
 #ifndef NUMA_NODE_H
 #define NUMA_NODE_H
 
-#include "TypePolicies.h"
 #include "Core.h"
 
 #include <set>
