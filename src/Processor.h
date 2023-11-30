@@ -15,5 +15,10 @@ using Processor = dxpool::ProcessorUnsupported;
 #endif
 
 
+static inline auto GetAllAvailableCores() -> std::set<Core> {
+    Processor processor;
+    return processor.FindAvailableCores();
+}
+
 } // namespace dxpool
 #endif

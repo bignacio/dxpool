@@ -45,7 +45,7 @@ class ProcessorUnsupported final: public ProcessorOperator {
     *
     * @return
     */
-    auto SetThreadAffinity(const std::set<Core>& cores) const -> bool {
+    auto SetThreadAffinity(const std::set<Core>& cores) const -> bool override {
         throw PlatformUnsupportedError("not implemented for this platform");
     }
 

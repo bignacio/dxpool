@@ -1,7 +1,6 @@
 #ifndef WORKER_POOL_H
 #define WORKER_POOL_H
 
-#include <string>
 #include <memory>
 #include <set>
 #include <vector>
